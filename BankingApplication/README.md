@@ -41,6 +41,8 @@ Open `/` (or `/web`) after starting the application. The pages support registrat
 
 The pages use an HTTP-only cookie session and antiforgery-protected forms. The JSON API continues to use Identity bearer tokens; a browser cookie does not authenticate API requests. Both interfaces call the same application services and enforce the same account ownership rules. The pages display demo IBANs only.
 
+Screenshots of the dashboard, sign-in, and registration pages are in the [repository README](../README.md#browser-interface).
+
 ## API
 
 JSON enum values are strings. Requests and responses use DTOs; EF entities are never sent directly to clients.
