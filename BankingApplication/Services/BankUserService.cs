@@ -3,9 +3,10 @@ using BankingApplication.Models;
 
 namespace BankingApplication.Services;
 
-/// <summary>Validates profiles and saves each new user with an initial account atomically.</summary>
+/// <summary>Validates profiles and saves each new user with a demo-funded initial account atomically.</summary>
 public sealed class BankUserService(IBankUserStore store, DemoIbanGenerator ibanGenerator) : IBankUserService
 {
+    private const decimal DemoOpeningBalance = 1_000m;
     /// <inheritdoc />
     public async Task<BankUserDto?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -36,7 +37,7 @@ public sealed class BankUserService(IBankUserStore store, DemoIbanGenerator iban
             AccountType = AccountType.Current,
             BankUser = user,
             BankUserId = user.Id,
-            Balance = 0m
+            Balance = DemoOpeningBalance
         };
         var write = await store.RegisterAsync(user, account, request.Password, cancellationToken);
         if (!write.Succeeded)

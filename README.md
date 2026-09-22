@@ -8,9 +8,23 @@ This is a learning project. Its generated IBANs are demos and cannot be used for
 
 ## Browser interface
 
-The project also includes server-rendered pages for registration, sign-in, and account management.
+The project also includes server-rendered pages for registration, sign-in, account management, transfers, and sent/received movement history.
 
-![Signed-in dashboard with a fictional demo user and account](docs/images/dashboard.png)
+### Send money
+
+The sender chooses one of their accounts and enters the recipient's demo IBAN, an amount, and an optional description.
+
+![Send-money form populated with fictional demo data](docs/images/send-money.png)
+
+### Sent and received history
+
+The same transfer appears as sent for the sender and received for the recipient. The balance changes and movement record are committed in one database transaction.
+
+![Sender movement history showing a completed outgoing transfer](docs/images/movement-history.png)
+
+![Recipient movement history showing a completed incoming transfer](docs/images/received-money.png)
+
+### Authentication
 
 ![Sign-in page](docs/images/sign-in.png)
 

@@ -2,7 +2,7 @@
 
 A prototype ASP.NET Core 10 API written in C# 14. It stores bank users and accounts in PostgreSQL through EF Core 10 and Npgsql. The starting data model came from `db model.txt`.
 
-> This is a learning prototype, not a payment system. It has password authentication and owner checks, but no email verification, MFA, transaction ledger, or real bank account issuance. Do not expose it publicly or use it for real customer data or transfers.
+> This is a learning prototype, not a payment system. It has password authentication, owner checks, and immutable demo transfer records, but no email verification, MFA, double-entry accounting ledger, or real bank account issuance. Do not expose it publicly or use it for real customer data or transfers.
 
 ## Run locally
 
@@ -37,7 +37,7 @@ In Development, the OpenAPI document is available at `/openapi/v1.json`. The app
 
 ## Server-rendered pages
 
-Open `/` (or `/web`) after starting the application. The pages support registration, sign-in, viewing your profile and accounts, opening a zero-balance account, and sign-out. Registration and sign-in are also available directly at `/web/register` and `/web/login`.
+Open `/` (or `/web`) after starting the application. The pages support registration, sign-in, viewing your profile and accounts, sending demo money, reviewing sent and received movements, opening another account, and sign-out. Registration and sign-in are also available directly at `/web/register` and `/web/login`. A new registration receives a 1,000.00 demo opening balance so the transfer flow can be exercised; additional accounts open with a zero balance.
 
 The pages use an HTTP-only cookie session and antiforgery-protected forms. The JSON API continues to use Identity bearer tokens; a browser cookie does not authenticate API requests. Both interfaces call the same application services and enforce the same account ownership rules. The pages display demo IBANs only.
 
@@ -49,12 +49,14 @@ JSON enum values are strings. Requests and responses use DTOs; EF entities are n
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/auth/register` | Register with a password and create an initial zero-balance Current account. Public. |
+| `POST` | `/api/auth/register` | Register with a password and create an initial demo-funded Current account. Public. |
 | `POST` | `/api/auth/login` | Verify credentials and issue a bearer token. Public. |
 | `GET` | `/api/bank-users/me` | Read the signed-in user's profile. |
 | `POST` | `/api/accounts` | Open another zero-balance account for the signed-in user. |
 | `GET` | `/api/accounts` | List the signed-in user's accounts. |
 | `GET` | `/api/accounts/{id}` | Read an account owned by the signed-in user. |
+| `POST` | `/api/accounts/{id}/transfers` | Send money from an owned account to a demo IBAN. |
+| `GET` | `/api/money-movements` | List sent and received movements for the signed-in user. |
 
 Register with `POST /api/auth/register`:
 
@@ -67,7 +69,7 @@ A successful response is HTTP 201, with a `Location` header for `/api/bank-users
 ```json
 {
   "user": { "id": "<guid>", "username": "Ada", "email": "ada@example.com", "country": "BG" },
-  "account": { "id": "<guid>", "iban": "<demo IBAN>", "balance": 0, "accountType": "Current", "bankUserId": "<same user guid>" }
+  "account": { "id": "<guid>", "iban": "<demo IBAN>", "balance": 1000, "accountType": "Current", "bankUserId": "<same user guid>" }
 }
 ```
 
@@ -85,7 +87,7 @@ Open another account while signed in:
 { "accountType": "Savings" }
 ```
 
-The server chooses the owner from the bearer token, along with the IBAN and opening balance. Clients cannot choose those values. Authentication is required by default; only registration, login, and the Development OpenAPI document are public. Protected routes return HTTP 401 without a valid token. An account ID owned by another user returns HTTP 404. Invalid inputs return HTTP 400; duplicate email or IBAN values return HTTP 409.
+The server chooses the owner from the bearer token, along with the IBAN and opening balance. Clients cannot choose those values. To send money, provide a recipient IBAN, a positive amount with at most two decimal places, and an optional description of up to 140 characters. The source account must belong to the signed-in user and have enough funds. Authentication is required by default; only registration, login, and the Development OpenAPI document are public. Protected routes return HTTP 401 without a valid token. An account ID owned by another user returns HTTP 404. Invalid inputs return HTTP 400; duplicate email or IBAN values return HTTP 409.
 
 ## How the code is organized
 
@@ -97,6 +99,7 @@ The server chooses the owner from the bearer token, along with the IBAN and open
 - `Auth/` adapts ASP.NET Core Identity and the HTTP user principal to the application interfaces.
 - `Models/` contains the EF entities and enums. A `BankUser` can own many `Account` rows; every account has one owner.
 - `Data/BankingDbContext.cs` maps banking and Identity tables, unique indexes, enum strings, foreign keys, `numeric(18,2)` balance, and a nonnegative balance constraint.
+- `MoneyMovementStore` changes both balances and inserts the immutable movement record in one serializable transaction. History queries are scoped to accounts owned by the signed-in user.
 - `Program.cs` configures dependency injection, PostgreSQL, Identity bearer authentication, authorization, JSON enums, OpenAPI, and startup migrations.
 
 The dependency flow is `Controllers → Services → persistence interfaces`, with `Data/` providing the EF Core implementations. The authenticated user ID comes from `ICurrentUser`, implemented in `Auth/`, and is used as the owner filter for account operations.
@@ -116,7 +119,7 @@ Registration is the one multi-save operation: `BankUserStore` coordinates Identi
 
 ## Writes and transactions
 
-EF Core uses its default `AutoTransactionBehavior.WhenNeeded`: each `SaveChangesAsync` call is atomic, and EF creates an explicit transaction when needed. Registration uses an **outer transaction** because Identity saves the credential row before the service saves the profile and initial account. Either all three rows commit or none do. Separate `SaveChangesAsync` calls without an outer transaction remain separate transactions. Direct SQL writes are outside this EF behavior.
+EF Core uses its default `AutoTransactionBehavior.WhenNeeded`: each `SaveChangesAsync` call is atomic, and EF creates an explicit transaction when needed. Registration uses an **outer transaction** because Identity saves the credential row before the service saves the profile and initial account. A money transfer uses a serializable transaction around both balance changes and its movement record. Either every part commits or none does. Separate `SaveChangesAsync` calls without an outer transaction remain separate transactions. Direct SQL writes are outside this EF behavior.
 
 `CancellationToken` flows from each HTTP request through the services to EF Core. Cancellation can stop work when a request ends, but a canceled client request does not prove that a write was rolled back.
 
@@ -157,10 +160,10 @@ $profile
 $accounts
 ```
 
-The registration response includes a zero-balance Current account and demo IBAN. The signed-in account list contains that same account. The values are for demonstration only.
+The registration response includes a demo-funded Current account and demo IBAN. The signed-in account list contains that same account. The values are for demonstration only.
 
 ## Verify and extend
 
-Run `dotnet test BankingApplication.slnx` to compile and run the xUnit suite. It covers country formats and IBAN checksums, owner-filtered account queries, and rollback of registration if the account insert fails. The store tests use SQLite in memory so they run without Docker; PostgreSQL-specific behavior still needs an end-to-end check against the Compose database. Run `dotnet tool run dotnet-ef migrations has-pending-model-changes --project BankingApplication --no-build` after building to confirm that the EF model matches the latest migration.
+Run `dotnet test BankingApplication.slnx` to compile and run the xUnit suite. It covers country formats and IBAN checksums, owner-filtered account queries, registration rollback, successful atomic transfers, and insufficient-funds rejection. The store tests use SQLite in memory so they run without Docker; PostgreSQL-specific behavior still needs an end-to-end check against the Compose database. Run `dotnet tool run dotnet-ef migrations has-pending-model-changes --project BankingApplication --no-build` after building to confirm that the EF model matches the latest migration.
 
 For a new write operation, put its rules in a service, its EF work in a store, and expose only the necessary request and response fields through DTOs. If it makes more than one save that must succeed together, put an explicit transaction around the entire operation in the data layer. Keep generated IBANs out of any real payment flow.

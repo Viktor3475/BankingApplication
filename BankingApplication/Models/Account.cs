@@ -18,4 +18,8 @@ public sealed class Account
     public Guid BankUserId { get; set; }
     /// <summary>EF navigation to the owning profile.</summary>
     public BankUser BankUser { get; set; } = null!;
+    /// <summary>Transfers sent from this account.</summary>
+    public List<MoneyMovement> SentMovements { get; set; } = [];
+    /// <summary>Transfers received by this account.</summary>
+    public List<MoneyMovement> ReceivedMovements { get; set; } = [];
 }

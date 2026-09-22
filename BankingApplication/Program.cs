@@ -45,9 +45,11 @@ public class Program
                 .RequireAuthenticatedUser().Build());
         builder.Services.AddScoped<IAccountService, AccountService>();
         builder.Services.AddScoped<IBankUserService, BankUserService>();
+        builder.Services.AddScoped<IMoneyMovementService, MoneyMovementService>();
         builder.Services.AddScoped<IAuthService, IdentityAuthService>();
         builder.Services.AddScoped<IAccountStore, AccountStore>();
         builder.Services.AddScoped<IBankUserStore, BankUserStore>();
+        builder.Services.AddScoped<IMoneyMovementStore, MoneyMovementStore>();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
         builder.Services.AddSingleton<DemoIbanGenerator>();

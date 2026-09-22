@@ -13,6 +13,8 @@ public sealed class BankingDbContext(DbContextOptions<BankingDbContext> options)
     public DbSet<BankUser> BankUsers => Set<BankUser>();
     /// <summary>Accounts owned by profiles.</summary>
     public DbSet<Account> Accounts => Set<Account>();
+    /// <summary>Immutable transfers between accounts.</summary>
+    public DbSet<MoneyMovement> MoneyMovements => Set<MoneyMovement>();
 
     /// <summary>Defines schema rules that EF conventions cannot infer from the entity classes.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,6 +44,26 @@ public sealed class BankingDbContext(DbContextOptions<BankingDbContext> options)
             entity.Property(account => account.Balance).HasColumnType("numeric(18,2)").IsRequired();
             entity.Property(account => account.AccountType).HasConversion<string>().HasMaxLength(16).IsRequired();
             entity.ToTable(table => table.HasCheckConstraint("ck_accounts_balance_nonnegative", "\"Balance\" >= 0"));
+        });
+
+        modelBuilder.Entity<MoneyMovement>(entity =>
+        {
+            entity.ToTable("money_movements");
+            entity.HasKey(movement => movement.Id);
+            entity.Property(movement => movement.Amount).HasColumnType("numeric(18,2)").IsRequired();
+            entity.Property(movement => movement.Description).HasMaxLength(140);
+            entity.Property(movement => movement.CreatedAtUtc).IsRequired();
+            entity.HasIndex(movement => movement.CreatedAtUtc);
+            entity.HasOne(movement => movement.SourceAccount).WithMany(account => account.SentMovements)
+                .HasForeignKey(movement => movement.SourceAccountId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(movement => movement.DestinationAccount).WithMany(account => account.ReceivedMovements)
+                .HasForeignKey(movement => movement.DestinationAccountId).OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint("ck_money_movements_amount_positive", "\"Amount\" > 0");
+                table.HasCheckConstraint("ck_money_movements_distinct_accounts",
+                    "\"SourceAccountId\" <> \"DestinationAccountId\"");
+            });
         });
     }
 }

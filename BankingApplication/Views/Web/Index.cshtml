@@ -9,6 +9,53 @@
     <p class="note">These accounts and IBANs are for demonstration only.</p>
 </div>
 <div class="card">
+    <h2>Send money</h2>
+    @if (TempData["TransferError"] is string transferError) { <p class="error">@transferError</p> }
+    @if (TempData["TransferSuccess"] is string transferSuccess) { <p class="success">@transferSuccess</p> }
+    <form asp-action="SendMoney" method="post">
+        <label for="sourceAccountId">From account</label>
+        <select id="sourceAccountId" name="sourceAccountId" required>
+            @foreach (var account in Model.Accounts)
+            {
+                <option value="@account.Id">@account.AccountType · @account.Iban · @account.Balance.ToString("N2")</option>
+            }
+        </select>
+        <label for="recipientIban">Recipient IBAN</label>
+        <input id="recipientIban" name="recipientIban" maxlength="34" required />
+        <label for="amount">Amount</label>
+        <input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
+        <label for="description">Description</label>
+        <input id="description" name="description" maxlength="140" />
+        <div><button type="submit">Send money</button></div>
+    </form>
+</div>
+<div class="card">
+    <h2>Money movement history</h2>
+    @if (Model.Movements.Count == 0)
+    {
+        <p class="note">No money movements yet.</p>
+    }
+    else
+    {
+        <div class="scroll"><table>
+            <thead><tr><th>When</th><th>Direction</th><th>Account</th><th>Counterparty</th><th>Description</th><th>Amount</th></tr></thead>
+            <tbody>
+            @foreach (var movement in Model.Movements)
+            {
+                <tr>
+                    <td><time datetime="@movement.CreatedAtUtc.ToString("O")">@movement.CreatedAtUtc.ToLocalTime().ToString("g")</time></td>
+                    <td><span class="direction @movement.Direction.ToString().ToLowerInvariant()">@movement.Direction</span></td>
+                    <td>@movement.AccountIban</td>
+                    <td>@movement.CounterpartyIban</td>
+                    <td>@(movement.Description ?? "—")</td>
+                    <td class="amount @movement.Direction.ToString().ToLowerInvariant()">@(movement.Direction == BankingApplication.Dtos.MoneyMovementDirection.Sent ? "−" : "+")@movement.Amount.ToString("N2")</td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+    }
+</div>
+<div class="card">
     <h2>Your accounts</h2>
     <div class="scroll"><table>
         <thead><tr><th>Type</th><th>IBAN</th><th>Balance</th></tr></thead>

@@ -11,7 +11,8 @@ namespace BankingApplication.Controllers;
 [Route("web")]
 [Authorize(AuthenticationSchemes = "WebCookie")]
 public sealed class WebController(
-    IAuthService auth, IBankUserService users, IAccountService accounts, ICurrentUser currentUser) : Controller
+    IAuthService auth, IBankUserService users, IAccountService accounts,
+    IMoneyMovementService movements, ICurrentUser currentUser) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -19,7 +20,8 @@ public sealed class WebController(
         var user = await users.GetAsync(currentUser.Id, cancellationToken);
         if (user is null) return NotFound();
         return View(new DashboardViewModel(user,
-            await accounts.GetAllAsync(currentUser.Id, cancellationToken)));
+            await accounts.GetAllAsync(currentUser.Id, cancellationToken),
+            await movements.GetHistoryAsync(currentUser.Id, cancellationToken)));
     }
 
     [AllowAnonymous, HttpGet("register")]
@@ -68,6 +70,22 @@ public sealed class WebController(
     {
         var result = await accounts.CreateAsync(new CreateAccountDto(accountType), currentUser.Id, cancellationToken);
         if (result.Error is not null) TempData["Error"] = result.Error;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("transfers"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendMoney(SendMoneyForm form, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["TransferError"] = "Enter a valid source account, recipient IBAN, and positive amount.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var result = await movements.SendAsync(form.SourceAccountId!.Value, currentUser.Id,
+            new SendMoneyDto(form.RecipientIban, form.Amount, form.Description), cancellationToken);
+        if (result.Error is not null) TempData["TransferError"] = result.Error;
+        else TempData["TransferSuccess"] = "Money sent successfully.";
         return RedirectToAction(nameof(Index));
     }
 }
