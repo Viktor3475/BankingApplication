@@ -1,0 +1,32 @@
+@baseUrl = http://localhost:5209
+
+### Register a user and create an initial account
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "Ada",
+  "email": "ada@example.com",
+  "password": "ExamplePass123!",
+  "country": "BG"
+}
+
+### Log in to obtain an access token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ada@example.com",
+  "password": "ExamplePass123!"
+}
+
+### Set accessToken to the token returned by login before sending
+@accessToken = paste-access-token-here
+
+### Read the signed-in profile
+GET {{baseUrl}}/api/bank-users/me
+Authorization: Bearer {{accessToken}}
+
+### List the signed-in user's accounts
+GET {{baseUrl}}/api/accounts
+Authorization: Bearer {{accessToken}}
