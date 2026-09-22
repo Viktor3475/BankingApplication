@@ -1,23 +1,54 @@
 @model DashboardViewModel
 @{
-    ViewData["Title"] = "Accounts";
+    ViewData["Title"] = "Dashboard";
+    var transferError = TempData["TransferError"] as string;
+    var transferSuccess = TempData["TransferSuccess"] as string;
+    var accountError = TempData["Error"] as string;
+    var initialTab = transferError is not null || transferSuccess is not null ? "send" : "accounts";
 }
 <div class="card">
     <form asp-action="Logout" method="post" style="float:right"><button type="submit">Sign out</button></form>
     <h1>Hello, @Model.User.Username</h1>
-    <p>@Model.User.Email · @Model.User.Country</p>
+    <p>@Model.User.Email &middot; @Model.User.Country</p>
     <p class="note">These accounts and IBANs are for demonstration only.</p>
 </div>
-<div class="card">
+
+<nav class="tabs" role="tablist" aria-label="Account features" data-initial-tab="@initialTab">
+    <button id="tab-accounts" type="button" role="tab" aria-controls="panel-accounts" aria-selected="@(initialTab == "accounts" ? "true" : "false")" tabindex="@(initialTab == "accounts" ? "0" : "-1")">Accounts</button>
+    <button id="tab-send" type="button" role="tab" aria-controls="panel-send" aria-selected="@(initialTab == "send" ? "true" : "false")" tabindex="@(initialTab == "send" ? "0" : "-1")">Send money</button>
+    <button id="tab-history" type="button" role="tab" aria-controls="panel-history" aria-selected="false" tabindex="-1">History</button>
+</nav>
+
+<section id="panel-accounts" class="card" role="tabpanel" aria-labelledby="tab-accounts" tabindex="0" hidden="@(initialTab != "accounts")">
+    <h2>Your accounts</h2>
+    <div class="scroll"><table>
+        <thead><tr><th>Type</th><th>IBAN</th><th>Balance</th></tr></thead>
+        <tbody>
+        @foreach (var account in Model.Accounts)
+        {
+            <tr><td>@account.AccountType</td><td>@account.Iban</td><td>@account.Balance.ToString("N2")</td></tr>
+        }
+        </tbody>
+    </table></div>
+    <h2>Open an account</h2>
+    @if (accountError is not null) { <p class="error" role="alert">@accountError</p> }
+    <form asp-action="CreateAccount" method="post">
+        <label for="accountType">Account type</label>
+        <select id="accountType" name="accountType"><option value="Current">Current</option><option value="Savings">Savings</option></select>
+        <div><button type="submit">Open account</button></div>
+    </form>
+</section>
+
+<section id="panel-send" class="card" role="tabpanel" aria-labelledby="tab-send" tabindex="0" hidden="@(initialTab != "send")">
     <h2>Send money</h2>
-    @if (TempData["TransferError"] is string transferError) { <p class="error">@transferError</p> }
-    @if (TempData["TransferSuccess"] is string transferSuccess) { <p class="success">@transferSuccess</p> }
+    @if (transferError is not null) { <p class="error" role="alert">@transferError</p> }
+    @if (transferSuccess is not null) { <p class="success" role="status">@transferSuccess</p> }
     <form asp-action="SendMoney" method="post">
         <label for="sourceAccountId">From account</label>
         <select id="sourceAccountId" name="sourceAccountId" required>
             @foreach (var account in Model.Accounts)
             {
-                <option value="@account.Id">@account.AccountType · @account.Iban · @account.Balance.ToString("N2")</option>
+                <option value="@account.Id">@account.AccountType &middot; @account.Iban &middot; @account.Balance.ToString("N2")</option>
             }
         </select>
         <label for="recipientIban">Recipient IBAN</label>
@@ -28,8 +59,9 @@
         <input id="description" name="description" maxlength="140" />
         <div><button type="submit">Send money</button></div>
     </form>
-</div>
-<div class="card">
+</section>
+
+<section id="panel-history" class="card" role="tabpanel" aria-labelledby="tab-history" tabindex="0" hidden>
     <h2>Money movement history</h2>
     @if (Model.Movements.Count == 0)
     {
@@ -47,32 +79,47 @@
                     <td><span class="direction @movement.Direction.ToString().ToLowerInvariant()">@movement.Direction</span></td>
                     <td>@movement.AccountIban</td>
                     <td>@movement.CounterpartyIban</td>
-                    <td>@(movement.Description ?? "—")</td>
-                    <td class="amount @movement.Direction.ToString().ToLowerInvariant()">@(movement.Direction == BankingApplication.Dtos.MoneyMovementDirection.Sent ? "−" : "+")@movement.Amount.ToString("N2")</td>
+                    <td>@(movement.Description ?? "-")</td>
+                    <td class="amount @movement.Direction.ToString().ToLowerInvariant()">@(movement.Direction == BankingApplication.Dtos.MoneyMovementDirection.Sent ? "-" : "+")@movement.Amount.ToString("N2")</td>
                 </tr>
             }
             </tbody>
         </table></div>
     }
-</div>
-<div class="card">
-    <h2>Your accounts</h2>
-    <div class="scroll"><table>
-        <thead><tr><th>Type</th><th>IBAN</th><th>Balance</th></tr></thead>
-        <tbody>
-        @foreach (var account in Model.Accounts)
-        {
-            <tr><td>@account.AccountType</td><td>@account.Iban</td><td>@account.Balance.ToString("N2")</td></tr>
+</section>
+
+<script>
+    (() => {
+        const tabList = document.querySelector('[role="tablist"]');
+        const tabs = [...tabList.querySelectorAll('[role="tab"]')];
+        const validNames = ['accounts', 'send', 'history'];
+
+        function activate(name, focus = false) {
+            if (!validNames.includes(name)) return;
+            for (const tab of tabs) {
+                const selected = tab.id === `tab-${name}`;
+                tab.setAttribute('aria-selected', String(selected));
+                tab.tabIndex = selected ? 0 : -1;
+                document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+                if (selected && focus) tab.focus();
+            }
         }
-        </tbody>
-    </table></div>
-</div>
-<div class="card">
-    <h2>Open an account</h2>
-    @if (TempData["Error"] is string error) { <p class="error">@error</p> }
-    <form asp-action="CreateAccount" method="post">
-        <label for="accountType">Account type</label>
-        <select id="accountType" name="accountType"><option value="Current">Current</option><option value="Savings">Savings</option></select>
-        <div><button type="submit">Open account</button></div>
-    </form>
-</div>
+
+        for (const tab of tabs) {
+            tab.addEventListener('click', () => activate(tab.id.slice(4)));
+            tab.addEventListener('keydown', event => {
+                const index = tabs.indexOf(tab);
+                const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length
+                    : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length
+                    : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+                if (next < 0) return;
+                event.preventDefault();
+                activate(tabs[next].id.slice(4), true);
+            });
+        }
+
+        const requested = location.hash.slice(1);
+        activate(tabList.dataset.initialTab === 'send' ? 'send'
+            : validNames.includes(requested) ? requested : 'accounts');
+    })();
+</script>

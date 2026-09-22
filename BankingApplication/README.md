@@ -39,6 +39,8 @@ In Development, the OpenAPI document is available at `/openapi/v1.json`. The app
 
 Open `/` (or `/web`) after starting the application. The pages support registration, sign-in, viewing your profile and accounts, sending demo money, reviewing sent and received movements, opening another account, and sign-out. Registration and sign-in are also available directly at `/web/register` and `/web/login`. A new registration receives a 1,000.00 demo opening balance so the transfer flow can be exercised; additional accounts open with a zero balance.
 
+The signed-in dashboard groups Accounts, Send money, and History into tabs. Click a tab or use the left and right arrow keys to switch. After a transfer, the Send money tab displays its result.
+
 The pages use an HTTP-only cookie session and antiforgery-protected forms. The JSON API continues to use Identity bearer tokens; a browser cookie does not authenticate API requests. Both interfaces call the same application services and enforce the same account ownership rules. The pages display demo IBANs only.
 
 Screenshots of the dashboard, sign-in, and registration pages are in the [repository README](../README.md#browser-interface).

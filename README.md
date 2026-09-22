@@ -8,7 +8,7 @@ This is a learning project. Its generated IBANs are demos and cannot be used for
 
 ## Browser interface
 
-The project also includes server-rendered pages for registration, sign-in, account management, transfers, and sent/received movement history.
+The green, server-rendered interface includes registration and sign-in pages plus Accounts, Send money, and History tabs for signed-in users.
 
 ### Send money
 

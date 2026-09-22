@@ -3,28 +3,35 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] · Banking Demo</title>
+    <title>@ViewData["Title"] - Banking Demo</title>
     <style>
-        :root { font-family: system-ui, sans-serif; color: #142331; background: #f2f5f8; }
+        :root { font-family: system-ui, sans-serif; color: #17352a; background: #f2f8f3; }
         body { margin: 0; }
-        header { background: #102e45; color: white; padding: 1rem max(1rem, calc((100vw - 880px)/2)); display: flex; justify-content: space-between; align-items: center; }
+        header { background: #145c38; color: white; padding: 1rem max(1rem, calc((100vw - 880px)/2)); display: flex; justify-content: space-between; align-items: center; }
         header a { color: white; text-decoration: none; font-weight: 700; }
         main { max-width: 880px; margin: 2rem auto; padding: 0 1rem; }
-        .card { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: .7rem; box-shadow: 0 2px 12px #102e4514; }
+        .card { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: .7rem; box-shadow: 0 2px 12px #145c3818; }
         label { display: block; margin: 1rem 0 .35rem; font-weight: 600; }
-        input, select { box-sizing: border-box; width: 100%; max-width: 440px; padding: .65rem; border: 1px solid #9aa9b5; border-radius: .3rem; font: inherit; }
-        button { margin-top: 1rem; padding: .7rem 1rem; border: 0; border-radius: .3rem; background: #075e79; color: white; font: inherit; cursor: pointer; }
-        a { color: #075e79; }
+        input, select { box-sizing: border-box; width: 100%; max-width: 440px; padding: .65rem; border: 1px solid #94b39f; border-radius: .3rem; font: inherit; }
+        input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #8bcf9b; outline-offset: 2px; }
+        button { margin-top: 1rem; padding: .7rem 1rem; border: 0; border-radius: .3rem; background: #176b41; color: white; font: inherit; cursor: pointer; }
+        button:hover { background: #105331; }
+        a { color: #176b41; }
         .error, .validation-summary-errors, .field-validation-error { color: #a32222; }
         .success { color: #16733b; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: .7rem; text-align: left; border-bottom: 1px solid #dce3e8; }
+        th, td { padding: .7rem; text-align: left; border-bottom: 1px solid #dce9df; }
         .scroll { overflow-x: auto; }
-        .note { color: #536674; }
+        .note { color: #526b5c; }
         .direction { font-weight: 700; }
         .sent { color: #a32222; }
         .received { color: #16733b; }
         .amount { white-space: nowrap; font-weight: 700; }
+        .tabs { display: flex; flex-wrap: wrap; gap: .5rem; padding: .35rem; margin: 1rem 0; background: #e2f0e6; border-radius: .7rem; }
+        .tabs button { flex: 1 1 140px; margin: 0; background: transparent; color: #205338; font-weight: 650; }
+        .tabs button:hover { background: #d0e6d6; }
+        .tabs button[aria-selected="true"] { background: #176b41; color: white; box-shadow: 0 2px 6px #145c3830; }
+        [hidden] { display: none !important; }
     </style>
 </head>
 <body>
