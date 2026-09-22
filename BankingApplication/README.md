@@ -107,7 +107,7 @@ Registration is the one multi-save operation: `BankUserStore` coordinates Identi
 
 ## Writes and transactions
 
-`BankingDbContext` sets `AutoTransactionBehavior.Always`. Every `SaveChangesAsync` call therefore runs in a transaction. Registration uses an **outer transaction** because Identity saves the credential row before the service saves the profile and initial account. Either all three rows commit or none do. Separate `SaveChangesAsync` calls without an outer transaction remain separate transactions. Direct SQL writes do not use this setting.
+EF Core uses its default `AutoTransactionBehavior.WhenNeeded`: each `SaveChangesAsync` call is atomic, and EF creates an explicit transaction when needed. Registration uses an **outer transaction** because Identity saves the credential row before the service saves the profile and initial account. Either all three rows commit or none do. Separate `SaveChangesAsync` calls without an outer transaction remain separate transactions. Direct SQL writes are outside this EF behavior.
 
 `CancellationToken` flows from each HTTP request through the services to EF Core. Cancellation can stop work when a request ends, but a canceled client request does not prove that a write was rolled back.
 

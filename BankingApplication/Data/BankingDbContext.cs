@@ -6,15 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace BankingApplication.Data;
 
 /// <summary>Maps bank users and accounts to PostgreSQL tables and enforces database constraints.</summary>
-public sealed class BankingDbContext : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>
+public sealed class BankingDbContext(DbContextOptions<BankingDbContext> options)
+    : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>(options)
 {
-    /// <summary>Creates a context that forces a transaction for each SaveChanges call.</summary>
-    public BankingDbContext(DbContextOptions<BankingDbContext> options) : base(options)
-    {
-        // Each SaveChanges call gets a transaction, including writes that need only one SQL statement.
-        Database.AutoTransactionBehavior = AutoTransactionBehavior.Always;
-    }
-
     /// <summary>Profiles linked one-to-one to Identity users by the same GUID.</summary>
     public DbSet<BankUser> BankUsers => Set<BankUser>();
     /// <summary>Accounts owned by profiles.</summary>
