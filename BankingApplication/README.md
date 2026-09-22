@@ -35,6 +35,12 @@ The app applies EF Core migrations at startup. The migration in `Data/Migrations
 
 In Development, the OpenAPI document is available at `/openapi/v1.json`. The application uses HTTPS redirection when configured with an HTTPS endpoint.
 
+## Server-rendered pages
+
+Open `/` (or `/web`) after starting the application. The pages support registration, sign-in, viewing your profile and accounts, opening a zero-balance account, and sign-out. Registration and sign-in are also available directly at `/web/register` and `/web/login`.
+
+The pages use an HTTP-only cookie session and antiforgery-protected forms. The JSON API continues to use Identity bearer tokens; a browser cookie does not authenticate API requests. Both interfaces call the same application services and enforce the same account ownership rules. The pages display demo IBANs only.
+
 ## API
 
 JSON enum values are strings. Requests and responses use DTOs; EF entities are never sent directly to clients.
@@ -82,6 +88,7 @@ The server chooses the owner from the bearer token, along with the IBAN and open
 ## How the code is organized
 
 - `Controllers/` translates HTTP requests into service calls and service results into HTTP status codes. Controllers do not query EF or parse claims.
+- `Views/` contains Razor templates for the browser interface. `WebController` handles page requests and forms through the existing services.
 - `Dtos/` defines the request and response fields visible to clients. `CreateAccountDto` deliberately has no balance, IBAN, or owner ID field.
 - `Services/` contains application rules and interfaces for persistence, authentication, and the current user. Services validate inputs, generate demo IBANs, and map entities to DTOs without depending on EF Core or Npgsql.
 - `Data/` implements the persistence interfaces with EF Core and PostgreSQL. It owns queries, unique-constraint handling, and the registration transaction that spans Identity credentials, profile, and starting account.

@@ -17,7 +17,7 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddControllers().AddJsonOptions(options =>
+        builder.Services.AddControllersWithViews().AddJsonOptions(options =>
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         builder.Services.AddOpenApi();
         var connectionString = builder.Configuration.GetConnectionString("Banking")
@@ -32,7 +32,13 @@ public class Program
             options.Lockout.MaxFailedAccessAttempts = 5;
         }).AddEntityFrameworkStores<BankingDbContext>().AddSignInManager();
         builder.Services.AddAuthentication(IdentityConstants.BearerScheme)
-            .AddBearerToken(IdentityConstants.BearerScheme);
+            .AddBearerToken(IdentityConstants.BearerScheme)
+            .AddCookie("WebCookie", options =>
+            {
+                options.LoginPath = "/web/login";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+            });
         // New endpoints require authentication unless explicitly marked AllowAnonymous.
         builder.Services.AddAuthorization(options =>
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -65,6 +71,8 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
+        app.MapGet("/", () => Results.Redirect("/web")).AllowAnonymous();
+        app.MapControllerRoute("web", "{controller=Web}/{action=Index}/{id?}");
 
         app.Run();
     }

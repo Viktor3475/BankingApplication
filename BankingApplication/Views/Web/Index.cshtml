@@ -1,0 +1,31 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Accounts";
+}
+<div class="card">
+    <form asp-action="Logout" method="post" style="float:right"><button type="submit">Sign out</button></form>
+    <h1>Hello, @Model.User.Username</h1>
+    <p>@Model.User.Email · @Model.User.Country</p>
+    <p class="note">These accounts and IBANs are for demonstration only.</p>
+</div>
+<div class="card">
+    <h2>Your accounts</h2>
+    <div class="scroll"><table>
+        <thead><tr><th>Type</th><th>IBAN</th><th>Balance</th></tr></thead>
+        <tbody>
+        @foreach (var account in Model.Accounts)
+        {
+            <tr><td>@account.AccountType</td><td>@account.Iban</td><td>@account.Balance.ToString("N2")</td></tr>
+        }
+        </tbody>
+    </table></div>
+</div>
+<div class="card">
+    <h2>Open an account</h2>
+    @if (TempData["Error"] is string error) { <p class="error">@error</p> }
+    <form asp-action="CreateAccount" method="post">
+        <label for="accountType">Account type</label>
+        <select id="accountType" name="accountType"><option value="Current">Current</option><option value="Savings">Savings</option></select>
+        <div><button type="submit">Open account</button></div>
+    </form>
+</div>

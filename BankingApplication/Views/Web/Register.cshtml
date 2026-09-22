@@ -1,0 +1,22 @@
+@model RegisterForm
+@{
+    ViewData["Title"] = "Register";
+}
+<div class="card">
+    <h1>Create a profile</h1>
+    <p class="note">Registration creates a zero-balance Current account with a demo IBAN.</p>
+    <form asp-action="Register" method="post">
+        <div asp-validation-summary="All" class="error"></div>
+        <label asp-for="Username"></label><input asp-for="Username" autocomplete="username" />
+        <label asp-for="Email"></label><input asp-for="Email" autocomplete="email" />
+        <label asp-for="Password"></label><input asp-for="Password" type="password" autocomplete="new-password" />
+        <label asp-for="Country"></label>
+        <select asp-for="Country">
+            <option value="">Choose a country</option>
+            <option value="BG">Bulgaria</option><option value="UK">United Kingdom</option>
+            <option value="RO">Romania</option><option value="RU">Russia</option><option value="TR">Turkey</option>
+        </select>
+        <div><button type="submit">Register</button></div>
+    </form>
+    <p>Already registered? <a asp-action="Login">Sign in</a></p>
+</div>
